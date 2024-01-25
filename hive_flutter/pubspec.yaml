@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
 
   hive: ^2.2.1
-  path_provider: ^2.0.10
-  path: ^1.8.2
+  # path_provider: ^2.0.10
+  # path: ^1.8.2
 
 dev_dependencies:
   test: ^1.21.1
