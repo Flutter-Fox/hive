@@ -23,9 +23,9 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<HiveType> {
   @override
   Future<String> generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep) async {
-    var interface = getInterface(element);
+    var cls = getClass(element);
     var library = await buildStep.inputLibrary;
-    var gettersAndSetters = getAccessors(interface, library);
+    var gettersAndSetters = getAccessors(cls, library);
 
     var getters = gettersAndSetters[0];
     verifyFieldIndices(getters);
@@ -35,23 +35,23 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<HiveType> {
 
     var typeId = getTypeId(annotation);
 
-    var adapterName = getAdapterName(interface.name, annotation);
-    var builder = interface is EnumElement
-        ? EnumBuilder(interface, getters)
-        : ClassBuilder(interface, getters, setters);
+    var adapterName = getAdapterName(cls.name, annotation);
+    var builder = cls.isEnum
+        ? EnumBuilder(cls, getters)
+        : ClassBuilder(cls, getters, setters);
 
     return '''
-    class $adapterName extends TypeAdapter<${interface.name}> {
+    class $adapterName extends TypeAdapter<${cls.name}> {
       @override
       final int typeId = $typeId;
 
       @override
-      ${interface.name} read(BinaryReader reader) {
+      ${cls.name} read(BinaryReader reader) {
         ${builder.buildRead()}
       }
 
       @override
-      void write(BinaryWriter writer, ${interface.name} obj) {
+      void write(BinaryWriter writer, ${cls.name} obj) {
         ${builder.buildWrite()}
       }
 
@@ -68,18 +68,18 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<HiveType> {
     ''';
   }
 
-  InterfaceElement getInterface(Element element) {
+  ClassElement getClass(Element element) {
     check(element.kind == ElementKind.CLASS || element.kind == ElementKind.ENUM,
         'Only classes or enums are allowed to be annotated with @HiveType.');
 
-    return element as InterfaceElement;
+    return element as ClassElement;
   }
 
-  Set<String> getAllAccessorNames(InterfaceElement interface) {
+  Set<String> getAllAccessorNames(ClassElement cls) {
     var accessorNames = <String>{};
 
-    var supertypes = interface.allSupertypes.map((it) => it.element2);
-    for (var type in [interface, ...supertypes]) {
+    var supertypes = cls.allSupertypes.map((it) => it.element);
+    for (var type in [cls, ...supertypes]) {
       for (var accessor in type.accessors) {
         if (accessor.isSetter) {
           var name = accessor.name;
@@ -94,13 +94,13 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<HiveType> {
   }
 
   List<List<AdapterField>> getAccessors(
-      InterfaceElement interface, LibraryElement library) {
-    var accessorNames = getAllAccessorNames(interface);
+      ClassElement cls, LibraryElement library) {
+    var accessorNames = getAllAccessorNames(cls);
 
     var getters = <AdapterField>[];
     var setters = <AdapterField>[];
     for (var name in accessorNames) {
-      var getter = interface.lookUpGetter(name, library);
+      var getter = cls.lookUpGetter(name, library);
       if (getter != null) {
         var getterAnn =
             getHiveFieldAnn(getter.variable) ?? getHiveFieldAnn(getter);
@@ -115,7 +115,7 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<HiveType> {
         }
       }
 
-      var setter = interface.lookUpSetter('$name=', library);
+      var setter = cls.lookUpSetter('$name=', library);
       if (setter != null) {
         var setterAnn =
             getHiveFieldAnn(setter.variable) ?? getHiveFieldAnn(setter);

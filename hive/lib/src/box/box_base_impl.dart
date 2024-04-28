@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:hive/hive.dart';
 import 'package:hive/src/backend/storage_backend.dart';
 import 'package:hive/src/box/change_notifier.dart';
@@ -103,72 +101,44 @@ abstract class BoxBaseImpl<E> implements BoxBase<E> {
   }
 
   @override
-  Future<void> put(
-    dynamic key,
-    E value, {
-    bool notify = true,
-  }) =>
-      putAll(
-        {key: value},
-        notify: notify,
-      );
+  Future<void> put(dynamic key, E value) => putAll({key: value});
 
   @override
-  Future<void> delete(
-    dynamic key, {
-    bool notify = true,
-  }) =>
-      deleteAll(
-        [key],
-        notify: notify,
-      );
+  Future<void> delete(dynamic key) => deleteAll([key]);
 
   @override
-  Future<int> add(
-    E value, {
-    bool notify = true,
-  }) async {
+  Future<int> add(E value) async {
     var key = keystore.autoIncrement();
-    await put(key, value, notify: notify);
+    await put(key, value);
     return key;
   }
 
   @override
-  Future<Iterable<int>> addAll(
-    Iterable<E> values, {
-    bool notify = true,
-  }) async {
+  Future<Iterable<int>> addAll(Iterable<E> values) async {
     var entries = <int, E>{};
     for (var value in values) {
       entries[keystore.autoIncrement()] = value;
     }
-    await putAll(entries, notify: notify);
+    await putAll(entries);
     return entries.keys;
   }
 
   @override
-  Future<void> putAt(
-    int index,
-    E value, {
-    bool notify = true,
-  }) {
-    return putAll({keystore.getAt(index)!.key: value}, notify: notify);
+  Future<void> putAt(int index, E value) {
+    return putAll({keystore.getAt(index)!.key: value});
   }
 
   @override
-  Future<void> deleteAt(
-    int index, {
-    bool notify = true,
-  }) {
-    return delete(keystore.getAt(index)!.key, notify: notify);
+  Future<void> deleteAt(int index) {
+    return delete(keystore.getAt(index)!.key);
   }
 
   @override
-  Future<int> clear({bool notify = true}) async {
+  Future<int> clear() async {
     checkOpen();
 
     await backend.clear();
-    return keystore.clear(notify: notify);
+    return keystore.clear();
   }
 
   @override
@@ -178,30 +148,25 @@ abstract class BoxBaseImpl<E> implements BoxBase<E> {
     if (!backend.supportsCompaction) return;
     if (keystore.deletedEntries == 0) return;
 
-    await flush();
-
     await backend.compact(keystore.frames);
     keystore.resetDeletedEntries();
   }
 
   /// Not part of public API
   @protected
-  FutureOr<void> performCompactionIfNeeded() {
+  Future<void> performCompactionIfNeeded() {
     if (_compactionStrategy(keystore.length, keystore.deletedEntries)) {
       return compact();
     }
+
+    return Future.value();
   }
 
   @override
   Future<void> close() async {
     if (!_open) return;
 
-    try {
-      await flush();
-    } finally {
-      _open = false;
-    }
-
+    _open = false;
     await keystore.close();
     hive.unregisterBox(name);
 
@@ -211,8 +176,6 @@ abstract class BoxBaseImpl<E> implements BoxBase<E> {
   @override
   Future<void> deleteFromDisk() async {
     if (_open) {
-      // deleteFromDisk does not work in some cases
-      await clear();
       _open = false;
       await keystore.close();
       hive.unregisterBox(name);
@@ -224,21 +187,13 @@ abstract class BoxBaseImpl<E> implements BoxBase<E> {
 
 class _NullBoxBase<E> implements BoxBase<E> {
   @override
-  Never add(
-    E value, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never add(E value) => throw UnimplementedError();
 
   @override
-  Never addAll(
-    Iterable<E> values, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never addAll(Iterable<E> values) => throw UnimplementedError();
 
   @override
-  Never clear({bool notify = true}) => throw UnimplementedError();
+  Never clear() => throw UnimplementedError();
 
   @override
   Never close() => throw UnimplementedError();
@@ -250,25 +205,13 @@ class _NullBoxBase<E> implements BoxBase<E> {
   Never containsKey(key) => throw UnimplementedError();
 
   @override
-  Never delete(
-    key, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never delete(key) => throw UnimplementedError();
 
   @override
-  Never deleteAll(
-    Iterable keys, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never deleteAll(Iterable keys) => throw UnimplementedError();
 
   @override
-  Never deleteAt(
-    int index, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never deleteAt(int index) => throw UnimplementedError();
 
   @override
   Never deleteFromDisk() => throw UnimplementedError();
@@ -301,27 +244,13 @@ class _NullBoxBase<E> implements BoxBase<E> {
   Never get path => throw UnimplementedError();
 
   @override
-  Never put(
-    key,
-    E value, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never put(key, E value) => throw UnimplementedError();
 
   @override
-  Never putAll(
-    Map<dynamic, E> entries, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never putAll(Map<dynamic, E> entries) => throw UnimplementedError();
 
   @override
-  Never putAt(
-    int index,
-    E value, {
-    bool notify = true,
-  }) =>
-      throw UnimplementedError();
+  Never putAt(int index, E value) => throw UnimplementedError();
 
   @override
   Never watch({key}) => throw UnimplementedError();

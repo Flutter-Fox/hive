@@ -381,20 +381,20 @@ void main() {
     });
 
     group('.writeFrame()', () {
-      test('normal', () async {
+      test('normal', () {
         for (var i = 0; i < testFrames.length; i++) {
           final frame = testFrames[i];
           var writer = BinaryWriterImpl(testRegistry);
-          expect(await writer.writeFrame(frame), frameBytes[i].length);
+          expect(writer.writeFrame(frame), frameBytes[i].length);
           expect(writer.toBytes(), frameBytes[i]);
         }
       });
 
-      test('encrypted', () async {
+      test('encrypted', () {
         for (var i = 0; i < testFrames.length; i++) {
           final frame = testFrames[i];
           var writer = BinaryWriterImpl(testRegistry);
-          expect(await writer.writeFrame(frame, cipher: testCipher),
+          expect(writer.writeFrame(frame, cipher: testCipher),
               frameBytesEncrypted[i].length);
           expect(writer.toBytes(), frameBytesEncrypted[i]);
         }

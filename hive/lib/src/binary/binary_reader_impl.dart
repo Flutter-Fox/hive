@@ -241,8 +241,8 @@ class BinaryReaderImpl extends BinaryReader {
   }
 
   /// Not part of public API
-  Future<Frame?> readFrame(
-      {HiveCipher? cipher, bool lazy = false, int frameOffset = 0}) async {
+  Frame? readFrame(
+      {HiveCipher? cipher, bool lazy = false, int frameOffset = 0}) {
     // frame length is stored on 4 bytes
     if (availableBytes < 4) return null;
 
@@ -275,7 +275,7 @@ class BinaryReaderImpl extends BinaryReader {
     } else if (cipher == null) {
       frame = Frame(key, read());
     } else {
-      frame = Frame(key, await readEncrypted(cipher));
+      frame = Frame(key, readEncrypted(cipher));
     }
 
     frame
@@ -332,10 +332,10 @@ class BinaryReaderImpl extends BinaryReader {
   /// Not part of public API
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
-  Future<dynamic> readEncrypted(HiveCipher cipher) async {
+  dynamic readEncrypted(HiveCipher cipher) {
     var inpLength = availableBytes;
     var out = Uint8List(inpLength);
-    var outLength = await cipher.decrypt(_buffer, _offset, inpLength, out, 0);
+    var outLength = cipher.decrypt(_buffer, _offset, inpLength, out, 0);
     _offset += inpLength;
 
     var valueReader = BinaryReaderImpl(out, _typeRegistry, outLength);

@@ -87,7 +87,6 @@ void main() {
         );
 
         await box.putAll({'key1': 'value1', 'key2': 'value2'});
-        await box.flush();
         verifyInOrder([
           () => backend.writeFrames([
                 Frame('key1', 'value1'),
@@ -153,7 +152,6 @@ void main() {
         );
 
         await box.deleteAll(['key1', 'key2']);
-        await box.flush();
         verifyInOrder([
           () => keystore.containsKey('key1'),
           () => keystore.containsKey('key2'),

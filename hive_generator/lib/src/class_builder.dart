@@ -13,10 +13,10 @@ import 'type_helper.dart';
 
 class ClassBuilder extends Builder {
   ClassBuilder(
-    InterfaceElement interface,
+    ClassElement cls,
     List<AdapterField> getters,
     List<AdapterField> setters,
-  ) : super(interface, getters, setters);
+  ) : super(cls, getters, setters);
 
   var hiveListChecker = const TypeChecker.fromRuntime(HiveList);
   var listChecker = const TypeChecker.fromRuntime(List);
@@ -27,8 +27,7 @@ class ClassBuilder extends Builder {
 
   @override
   String buildRead() {
-    var constr =
-        interface.constructors.firstOrNullWhere((it) => it.name.isEmpty);
+    var constr = cls.constructors.firstOrNullWhere((it) => it.name.isEmpty);
     check(constr != null, 'Provide an unnamed constructor.');
 
     // The remaining fields to initialize.
@@ -36,7 +35,7 @@ class ClassBuilder extends Builder {
 
     // Empty classes
     if (constr!.parameters.isEmpty && fields.isEmpty) {
-      return 'return ${interface.name}();';
+      return 'return ${cls.name}();';
     }
 
     var code = StringBuffer();
@@ -46,7 +45,7 @@ class ClassBuilder extends Builder {
       for (int i = 0; i < numOfFields; i++)
         reader.readByte(): reader.read(),
     };
-    return ${interface.name}(
+    return ${cls.name}(
     ''');
 
     for (var param in constr.parameters) {
@@ -129,7 +128,7 @@ class ClassBuilder extends Builder {
       }
       // The suffix is not needed with nnbd on $cast becauuse it short circuits,
       // otherwise it is needed.
-      var castWithSuffix = isLibraryNNBD(interface) ? '$cast' : '$suffix$cast';
+      var castWithSuffix = isLibraryNNBD(cls) ? '$cast' : '$suffix$cast';
       return '$suffix.map((dynamic e)=> ${_cast(arg, 'e')})$castWithSuffix';
     } else {
       return '$suffix.cast<${_displayString(arg)}>()';

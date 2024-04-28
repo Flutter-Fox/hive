@@ -41,7 +41,7 @@ class StorageBackendJs extends StorageBackend {
 
   /// Not part of public API
   @visibleForTesting
-  Future<dynamic> encodeValue(Frame frame) async {
+  dynamic encodeValue(Frame frame) {
     var value = frame.value;
     if (_cipher == null) {
       if (value == null) {
@@ -66,7 +66,7 @@ class StorageBackendJs extends StorageBackend {
     if (_cipher == null) {
       frameWriter.write(value);
     } else {
-      await frameWriter.writeEncrypted(value, _cipher!);
+      frameWriter.writeEncrypted(value, _cipher!);
     }
 
     var bytes = frameWriter.toBytes();
@@ -76,7 +76,7 @@ class StorageBackendJs extends StorageBackend {
 
   /// Not part of public API
   @visibleForTesting
-  Future<dynamic> decodeValue(dynamic value) async {
+  dynamic decodeValue(dynamic value) {
     if (value is ByteBuffer) {
       var bytes = Uint8List.view(value);
       if (_isEncoded(bytes)) {
@@ -131,9 +131,9 @@ class StorageBackendJs extends StorageBackend {
     if (hasProperty(store, 'getAll') && !cursor) {
       var completer = Completer<Iterable<dynamic>>();
       var request = store.getAll(null);
-      request.onSuccess.listen((_) async {
-        var futures = (request.result as List).map(decodeValue);
-        completer.complete(await Future.wait(futures));
+      request.onSuccess.listen((_) {
+        var values = (request.result as List).map(decodeValue);
+        completer.complete(values);
       });
       request.onError.listen((_) {
         completer.completeError(request.error!);
@@ -178,7 +178,7 @@ class StorageBackendJs extends StorageBackend {
       if (frame.deleted) {
         await store.delete(frame.key);
       } else {
-        await store.put(await encodeValue(frame), frame.key);
+        await store.put(encodeValue(frame), frame.key);
       }
     }
   }
@@ -204,6 +204,8 @@ class StorageBackendJs extends StorageBackend {
     final indexDB = js.context.hasProperty('window')
         ? window.indexedDB
         : WorkerGlobalScope.instance.indexedDB;
+
+    print('Delete ${_db.name} // $objectStoreName from disk');
 
     // directly deleting the entire DB if a non-collection Box
     if (_db.objectStoreNames?.length == 1) {

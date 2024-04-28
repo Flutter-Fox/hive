@@ -24,7 +24,7 @@ class HiveAesCipher implements HiveCipher {
   int calculateKeyCrc() => _keyCrc;
 
   @override
-  FutureOr<int> decrypt(
+  int decrypt(
       Uint8List inp, int inpOff, int inpLength, Uint8List out, int outOff) {
     var iv = inp.view(inpOff, 16);
 
@@ -36,7 +36,7 @@ class HiveAesCipher implements HiveCipher {
   Uint8List generateIv() => _ivRandom.nextBytes(16);
 
   @override
-  FutureOr<int> encrypt(
+  int encrypt(
       Uint8List inp, int inpOff, int inpLength, Uint8List out, int outOff) {
     var iv = generateIv();
     out.setAll(outOff, iv);
