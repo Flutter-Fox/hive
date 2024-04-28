@@ -1,12 +1,3 @@
-# 3.0.0-dev
-
-### Enchantments
-
-- Implemented in-memory storage backend
-- Added `notify` parameter to public APIs
-- Web Worker support
-- Threaded AesCipher support (requires hive_flutter >=2.0.0-dev)
-
 # 2.2.3
 
 ### Enhancements

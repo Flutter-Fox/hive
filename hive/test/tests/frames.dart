@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -159,7 +158,7 @@ void expectFrames(Iterable<Frame> f1, Iterable<Frame> f2) {
 
 void buildGoldens() async {
   Future<void> generate(String fileName, String varName,
-      FutureOr<Uint8List> Function(Frame frame) transformer) async {
+      Uint8List Function(Frame frame) transformer) async {
     var file = File('test/generated/$fileName.g.dart');
     await file.create();
     var code = StringBuffer();
@@ -167,7 +166,7 @@ void buildGoldens() async {
     code.writeln('final $varName = [');
     for (var frame in testFrames) {
       code.writeln('// ${frame.key}');
-      var bytes = await transformer(frame);
+      var bytes = transformer(frame);
       code.writeln('Uint8List.fromList(${bytes.toString()}),');
     }
     code.writeln('];');
@@ -189,10 +188,9 @@ void buildGoldens() async {
     writer.writeFrame(f, cipher: testCipher);
     return writer.toBytes();
   });
-  await generate('frame_values_encrypted', 'frameValuesBytesEncrypted',
-      (f) async {
-    var writer = BinaryWriterImpl(HiveImpl());
-    await writer.writeEncrypted(f.value, testCipher, writeTypeId: false);
+  await generate('frame_values_encrypted', 'frameValuesBytesEncrypted', (f) {
+    var writer = BinaryWriterImpl(HiveImpl())
+      ..writeEncrypted(f.value, testCipher, writeTypeId: false);
     return writer.toBytes();
   });
 }

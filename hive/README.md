@@ -3,17 +3,13 @@
 </p>
 <h2 align="center">Fast, Enjoyable & Secure NoSQL Database</h2>
 
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/hivedb/hive/test.yml?label=tests&labelColor=333940&logo=github)](https://github.com/hivedb/hive/actions)
-[![Codecov branch](https://img.shields.io/codecov/c/github/hivedb/hive/nndb?labelColor=333940&logo=codecov&logoColor=white)](https://codecov.io/gh/hivedb/hive)
-[![Pub Version](https://img.shields.io/pub/v/hive?label=pub.dev&labelColor=333940&logo=dart)](https://pub.dev/packages/hive)
-[![GitHub](https://img.shields.io/github/license/hivedb/hive?color=%23007A88&labelColor=333940&logo=apache)](https://github.com/hivedb/hive/blob/master/LICENSE)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/hivedb/hive/Dart%20CI/nndb?label=tests&labelColor=333940&logo=github)](https://github.com/hivedb/hive/actions) [![Codecov branch](https://img.shields.io/codecov/c/github/hivedb/hive/nndb?labelColor=333940&logo=codecov&logoColor=white)](https://codecov.io/gh/hivedb/hive) [![Pub Version](https://img.shields.io/pub/v/hive?label=pub.dev&labelColor=333940&logo=dart)](https://pub.dev/packages/hive) [![GitHub](https://img.shields.io/github/license/hivedb/hive?color=%23007A88&labelColor=333940&logo=apache)](https://github.com/hivedb/hive/blob/master/LICENSE)
 
 Hive is a lightweight and blazing fast key-value database written in pure Dart. Inspired by [Bitcask](https://en.wikipedia.org/wiki/Bitcask).
 
-[Documentation & Samples](https://docs.hivedb.dev/) 📖
+### [Documentation & Samples](https://docs.hivedb.dev/) 📖
 
-### Before you start
-Consider using [Isar](https://github.com/isar/isar), a Flutter database by the author of Hive that is superior in every way!
+If you need queries, multi-isolate support or links between objects check out [Isar Database](https://github.com/isar/isar).
 
 ## Features
 
@@ -167,35 +163,6 @@ class SettingsPage extends StatelessWidget {
 ```
 
 Boxes are cached and therefore fast enough to be used directly in the `build()` method of Flutter widgets.
-
-### Native AES crypto implementation
-
-When using Flutter, Hive supports native encryption using [package:cryptography](https://pub.dev/packages/cryptography)
-and [package:cryptography_flutter](https://pub.dev/packages/cryptography_flutter).
-
-Native AES implementations tremendously speed up operations on encrypted Boxes.
-
-Please follow these steps:
-
-1. add dependency to pubspec.yaml
-
-```yaml
-dependencies:
-  cryptography_flutter: ^2.0.2
-```
-
-2. enable native implementations
-
-```dart
-import 'package:cryptography_flutter/cryptography_flutter.dart';
-
-void main() {
-  // Enable Flutter cryptography
-  FlutterCryptography.enable();
-
-  // ....
-}
-```
 
 ## Benchmark
 

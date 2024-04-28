@@ -1,7 +1,3 @@
-## 2.0.0-dev
-
-- Threaded AesCipher support
-
 ## 1.1.0
 
 - Exports `Color` and `TimeOfDay` adapters - [#698](https://github.com/hivedb/hive/pull/698)

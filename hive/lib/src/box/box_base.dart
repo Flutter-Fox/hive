@@ -80,74 +80,42 @@ abstract class BoxBase<E> {
   bool containsKey(dynamic key);
 
   /// Saves the [key] - [value] pair.
-  Future<void> put(
-    dynamic key,
-    E value, {
-    bool notify = true,
-  });
+  Future<void> put(dynamic key, E value);
 
   /// Associates the [value] with the n-th key. An exception is raised if the
   /// key does not exist.
-  Future<void> putAt(
-    int index,
-    E value, {
-    bool notify = true,
-  });
+  Future<void> putAt(int index, E value);
 
   /// Saves all the key - value pairs in the [entries] map.
-  Future<void> putAll(
-    Map<dynamic, E> entries, {
-    bool notify = true,
-  });
+  Future<void> putAll(Map<dynamic, E> entries);
 
   /// Saves the [value] with an auto-increment key.
-  Future<int> add(
-    E value, {
-    bool notify = true,
-  });
+  Future<int> add(E value);
 
   /// Saves all the [values] with auto-increment keys.
-  Future<Iterable<int>> addAll(
-    Iterable<E> values, {
-    bool notify = true,
-  });
-
-  /// Beta: Performs the following write-only operations in memory and later
-  /// flushes
-  ///
-  /// This can be used to improve speed on many small write operations
-  // Future<void> transaction(Future<void> Function() operation);
+  Future<Iterable<int>> addAll(Iterable<E> values);
 
   /// Deletes the given [key] from the box.
   ///
   /// If it does not exist, nothing happens.
-  Future<void> delete(
-    dynamic key, {
-    bool notify = true,
-  });
+  Future<void> delete(dynamic key);
 
   /// Deletes the n-th key from the box.
   ///
   /// If it does not exist, nothing happens.
-  Future<void> deleteAt(
-    int index, {
-    bool notify = true,
-  });
+  Future<void> deleteAt(int index);
 
   /// Deletes all the given [keys] from the box.
   ///
   /// If a key does not exist, it is skipped.
-  Future<void> deleteAll(
-    Iterable<dynamic> keys, {
-    bool notify = true,
-  });
+  Future<void> deleteAll(Iterable<dynamic> keys);
 
   /// Induces compaction manually. This is rarely needed. You should consider
   /// providing a custom compaction strategy instead.
   Future<void> compact();
 
   /// Removes all entries from the box.
-  Future<int> clear({bool notify = true});
+  Future<int> clear();
 
   /// Closes the box.
   ///

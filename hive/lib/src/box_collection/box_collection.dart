@@ -3,58 +3,37 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:hive/hive.dart';
-import 'package:hive/src/backend/storage_backend.dart';
-import 'package:hive/src/hive_impl.dart';
 
 import 'box_collection_stub.dart' as implementation;
 
 class BoxCollection implements implementation.BoxCollection {
   @override
   final String name;
-
   @override
-  Set<String> get boxNames => Set.from(_backends.keys);
-
-  final Map<String, StorageBackend> _backends;
-
+  final Set<String> boxNames;
   HiveCipher? _cipher;
 
-  BoxCollection(this.name, this._backends);
+  BoxCollection(this.name, this.boxNames);
 
-  late CollectionBox<String?> _badKeyBox;
+  static bool _hiveInit = false;
+
+  late Box<String> _badKeyBox;
 
   static Future<BoxCollection> open(
     String name,
     Set<String> boxNames, {
     String? path,
-    @Deprecated('Use [cipher] instead') HiveCipher? key,
-    HiveCipher? cipher,
-    bool useLocks = true,
+    HiveCipher? key,
   }) async {
-    if (name.contains('/') || name.trim() != name || name.isEmpty) {
-      throw HiveError('Invalid collection name "$name"');
+    if (!_hiveInit) {
+      Hive.init(path ?? './');
+      _hiveInit = true;
     }
-    // compatibility for [key]
-    cipher ??= key;
-
-    final hive = Hive as HiveImpl;
-
-    if (!hive.wasInitialized && path != null) {
-      throw HiveError(
-        'You need to initialize Hive or '
-        'provide a path to store the box.',
-      );
+    final collection = BoxCollection(name, boxNames);
+    if (key != null) {
+      collection._cipher = key;
     }
-    final names = boxNames..add('bad_keys');
-    final backends = await hive.manager
-        .openCollection(names, path ?? hive.homePath, false, cipher, name);
-
-    final collection = BoxCollection(name, backends);
-    if (cipher != null) {
-      collection._cipher = cipher;
-    }
-
-    collection._badKeyBox = await collection.openBox<String>('bad_keys');
+    collection._badKeyBox = await Hive.openBox<String>('${name}_bad_keys');
 
     return collection;
   }
@@ -64,27 +43,23 @@ class BoxCollection implements implementation.BoxCollection {
       {bool preload = false,
       implementation.CollectionBox<V> Function(String, BoxCollection)?
           boxCreator}) async {
-    if (!boxNames.contains(name) && name != 'bad_keys') {
-      throw Exception('Box with name $name is not in the known'
-          'box names of this collection.');
+    if (!boxNames.contains(name)) {
+      throw Exception(
+          'Box with name $name is not in the known box names of this collection.');
     }
     final i = _openBoxes.indexWhere((box) => box.name == name);
     if (i != -1) {
       return _openBoxes[i] as CollectionBox<V>;
     }
-    final boxIdentifier = name;
+    final boxIdentifier = '${this.name}_$name';
     final box = boxCreator?.call(boxIdentifier, this) as CollectionBox<V>? ??
         CollectionBox<V>(boxIdentifier, this);
     if (preload) {
-      final hive = Hive as HiveImpl;
-      box._cachedBox = hive.isBoxOpen(box.name, this.name)
-          ? hive.lazyBox(box.name, this.name)
-          : await hive.openBox(
-              box.name,
-              encryptionCipher: _cipher,
-              collection: this.name,
-              backend: _backends[name]!,
-            );
+      box._cachedBox = await Hive.openBox(
+        box.name,
+        encryptionCipher: _cipher,
+        collection: name,
+      );
     }
     _openBoxes.add(box);
     return box;
@@ -125,7 +100,7 @@ class BoxCollection implements implementation.BoxCollection {
 
   @override
   Future<void> deleteFromDisk() => Future.wait(
-        boxNames.map((box) => Hive.deleteBoxFromDisk(box, collection: name)),
+        boxNames.map(Hive.deleteBoxFromDisk),
       );
 }
 
@@ -141,37 +116,37 @@ class CollectionBox<V> implements implementation.CollectionBox<V> {
   BoxBase? _cachedBox;
 
   Future<BoxBase> _getBox() async {
-    if (_cachedBox == null || !_cachedBox!.isOpen) {
-      final hive = Hive as HiveImpl;
-      _cachedBox = hive.isBoxOpen(name, boxCollection.name)
-          ? hive.lazyBox(name, boxCollection.name)
-          : await hive.openLazyBox(
-              name,
-              encryptionCipher: boxCollection._cipher,
-              collection: boxCollection.name,
-              backend: boxCollection._backends[name]!,
-            );
-    }
-
-    return _cachedBox!;
+    return _cachedBox ??= await Hive.openLazyBox<V>(
+      name,
+      encryptionCipher: boxCollection._cipher,
+      collection: boxCollection.name,
+    );
   }
 
-  CollectionBox(this.name, this.boxCollection);
+  CollectionBox(this.name, this.boxCollection) {
+    if (!(V is String ||
+        V is bool ||
+        V is int ||
+        V is Object ||
+        V is List<Object?> ||
+        V is Map<String, Object?> ||
+        V is double)) {
+      throw Exception(
+          'Value type ${V.runtimeType} is not one of the allowed value types {String, int, double, List<Object?>, Map<String, Object?>}.');
+    }
+  }
 
   @override
   Future<List<String>> getAllKeys() async {
     final box = await _getBox();
-
-    return (await Future.wait(
-      box.keys.whereType<String>().map(
-        (key) async {
+    return box.keys
+        .cast<String>()
+        .map((key) {
           if (key.startsWith(_badKeyPrefix)) {
-            key = await boxCollection._badKeyBox.get(key) ?? key;
+            key = boxCollection._badKeyBox.get(key) ?? key;
           }
           return key;
-        },
-      ),
-    ))
+        })
         .map(Uri.decodeComponent)
         .toList();
   }
@@ -251,11 +226,12 @@ class CollectionBox<V> implements implementation.CollectionBox<V> {
 
   @override
   Future<void> flush() async {
+    final box = await _getBox();
     // we do *not* await the flushing here. That makes it so that we can execute
-    // other stuff while the flushing is still in progress. Fortunately, hive
-    // has a proper read / write queue, meaning that if we do actually want to
-    // write something again, it'll wait until the flush is completed.
-    _getBox().then((box) => box.flush());
+    // other stuff while the flusing is still in progress. Fortunately, hive has
+    // a proper read / write queue, meaning that if we do actually want to write
+    // something again, it'll wait until the flush is completed.
+    box.flush();
   }
 
   Future<void> _flushOrMark() async {

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -269,7 +268,7 @@ class BinaryWriterImpl extends BinaryWriter {
   }
 
   /// Not part of public API
-  Future<int> writeFrame(Frame frame, {HiveCipher? cipher}) async {
+  int writeFrame(Frame frame, {HiveCipher? cipher}) {
     ArgumentError.checkNotNull(frame);
 
     var startOffset = _offset;
@@ -282,7 +281,7 @@ class BinaryWriterImpl extends BinaryWriter {
       if (cipher == null) {
         write(frame.value);
       } else {
-        await writeEncrypted(frame.value, cipher);
+        writeEncrypted(frame.value, cipher);
       }
     }
 
@@ -395,8 +394,8 @@ class BinaryWriterImpl extends BinaryWriter {
   /// Not part of public API
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
-  FutureOr<void> writeEncrypted(dynamic value, HiveCipher cipher,
-      {bool writeTypeId = true}) async {
+  void writeEncrypted(dynamic value, HiveCipher cipher,
+      {bool writeTypeId = true}) {
     var valueWriter = BinaryWriterImpl(_typeRegistry)
       ..write(value, writeTypeId: writeTypeId);
     var inp = valueWriter._buffer;
@@ -404,7 +403,7 @@ class BinaryWriterImpl extends BinaryWriter {
 
     _reserveBytes(cipher.maxEncryptedSize(inp));
 
-    var len = await cipher.encrypt(inp, 0, inpLength, _buffer, _offset);
+    var len = cipher.encrypt(inp, 0, inpLength, _buffer, _offset);
 
     _offset += len;
   }

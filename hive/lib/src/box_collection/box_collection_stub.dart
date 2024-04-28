@@ -10,7 +10,6 @@ abstract class BoxCollection {
     Set<String> boxNames, {
     String? path,
     HiveCipher? key,
-    bool useLocks = true,
   }) {
     throw UnimplementedError();
   }
